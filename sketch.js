@@ -36,12 +36,11 @@ class CA {
 
   generate() {
     for (let i = 0; i < this.cols; i++) {
-      let left =
-        this.matrix[(i + this.cols - 1) % this.cols][
-          this.generation % this.rows
-        ];
+      let leftIndex = (i + this.cols - 1) % this.cols;
+      let rightIndex = (i + 1) % this.cols;
+      let left = this.matrix[leftIndex][this.generation % this.rows];
       let me = this.matrix[i][this.generation % this.rows];
-      let right = this.matrix[(i + 1) % this.cols][this.generation % this.rows];
+      let right = this.matrix[rightIndex][this.generation % this.rows];
       this.matrix[i][(this.generation + 1) % this.rows] = this.rules(
         left,
         me,
@@ -50,47 +49,50 @@ class CA {
     }
     this.generation++;
 
-    // Gradually transition between the two rules
-    this.blendFactor += 0.01; // Adjust the increment for speed of transition
+    this.blendFactor += 0.01;
     if (this.blendFactor >= 1) {
-      // Once the transition is complete, reset blendFactor and pick new rules
       this.blendFactor = 0;
       const [newRuleA, newRuleB] = pickTwoRandomRules();
       this.ruleA = newRuleA;
       this.ruleB = newRuleB;
-      console.log(
-        `Transitioning to New Rules:`,
-        Object.keys(rules).find((key) => rules[key] === this.ruleA),
-        Object.keys(rules).find((key) => rules[key] === this.ruleB)
-      );
     }
-    this.updateRule(); // Update the rule based on the new blendFactor
+    this.updateRule();
 
-    let newMutations = {}; // Temporary storage for this generation's mutations
-
+    let newMutations = {};
     for (let i = 0; i < this.cols; i++) {
       let mutatedRow = (this.generation + 1) % this.rows;
-      let baseMutationChance = 0.02; // Base mutation chance
-      let adjacentMutationChance = 0.5; // Higher mutation chance if adjacent to a mutated cell
+      let baseMutationChance = 0.02;
+      let adjacentMutationChance = 0.7;
+      let inheritColor = null;
 
-      // Check if any adjacent cells (left or right) in the previous row were mutated
-      let hasMutatedNeighbor =
+      // Check adjacent cells for mutations and inherit color if found
+      if (
         this.mutations[
           `${(i - 1 + this.cols) % this.cols},${this.generation % this.rows}`
-        ] ||
-        this.mutations[`${(i + 1) % this.cols},${this.generation % this.rows}`];
+        ]
+      ) {
+        inheritColor =
+          this.mutations[
+            `${(i - 1 + this.cols) % this.cols},${this.generation % this.rows}`
+          ];
+      } else if (
+        this.mutations[`${(i + 1) % this.cols},${this.generation % this.rows}`]
+      ) {
+        inheritColor =
+          this.mutations[
+            `${(i + 1) % this.cols},${this.generation % this.rows}`
+          ];
+      }
 
-      let mutationChance = hasMutatedNeighbor
+      let mutationChance = inheritColor
         ? adjacentMutationChance
         : baseMutationChance;
-
       if (random(1) < mutationChance) {
-        let color = [random(360), 100, 100]; // HSB color with random hue
-        newMutations[`${i},${mutatedRow}`] = color; // Store mutation with coordinates as key
+        let color = inheritColor || [random(360), 100, 100];
+        newMutations[`${i},${mutatedRow}`] = color;
       }
     }
 
-    // Merge new mutations into the main mutations object
     this.mutations = { ...this.mutations, ...newMutations };
   }
 
