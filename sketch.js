@@ -6,6 +6,42 @@ Mutation:
 
 
 */
+let currentTheme = "leet";
+let drawSpeed = 60; // Frames per second
+let scale = 1; // Default scale is 1
+
+const themes = {
+  dawn: {
+    background: [20, 80, 100],
+    cellColor: [30, 100, 100], // Example cell color for dawn theme
+    stroke: [0, 0, 0, 0], // Transparent stroke
+  },
+  midnight: {
+    background: [230, 80, 20],
+    cellColor: [240, 100, 100], // Example cell color for midnight theme
+    stroke: [0, 0, 100, 0.5], // Semi-transparent stroke
+  },
+  twilight: {
+    background: [280, 60, 30],
+    cellColor: [290, 100, 100], // Example cell color for twilight theme
+    stroke: [50, 100, 100, 0.5], // Semi-transparent stroke
+  },
+  leet: {
+    background: [0, 0, 0],
+    cellColor: [130, 100, 100], // Example cell color for forest theme
+    stroke: [60, 100, 80, 1], // Semi-transparent stroke
+  },
+  // Add more themes as needed
+};
+
+const rules = {
+  rule110: [0, 1, 1, 0, 1, 1, 1, 0], //GOOD
+  rule77: [0, 1, 0, 0, 1, 1, 0, 1], //TJA
+  rule225: [0, 1, 1, 1, 1, 1, 1, 1], //fyll
+  rule94: [0, 1, 0, 1, 1, 1, 1, 0], //GOOD
+  rule102: [0, 1, 1, 0, 0, 1, 1, 0],
+  rule90: [0, 1, 0, 1, 1, 0, 1, 0], //GOOD
+};
 
 class CA {
   constructor() {
@@ -138,39 +174,6 @@ class CA {
   }
 }
 
-const themes = {
-  dawn: {
-    background: [20, 80, 100],
-    cellColor: [30, 100, 100], // Example cell color for dawn theme
-    stroke: [0, 0, 0, 0], // Transparent stroke
-  },
-  midnight: {
-    background: [230, 80, 20],
-    cellColor: [240, 100, 100], // Example cell color for midnight theme
-    stroke: [0, 0, 100, 0.5], // Semi-transparent stroke
-  },
-  twilight: {
-    background: [280, 60, 30],
-    cellColor: [290, 100, 100], // Example cell color for twilight theme
-    stroke: [50, 100, 100, 0.5], // Semi-transparent stroke
-  },
-  leet: {
-    background: [0, 0, 0],
-    cellColor: [130, 100, 100], // Example cell color for forest theme
-    stroke: [60, 100, 80, 0.5], // Semi-transparent stroke
-  },
-  // Add more themes as needed
-};
-
-const rules = {
-  rule110: [0, 1, 1, 0, 1, 1, 1, 0], //GOOD
-  rule77: [0, 1, 0, 0, 1, 1, 0, 1], //TJA
-  rule225: [0, 1, 1, 1, 1, 1, 1, 1], //fyll
-  rule94: [0, 1, 0, 1, 1, 1, 1, 0], //GOOD
-  rule102: [0, 1, 1, 0, 0, 1, 1, 0],
-  rule90: [0, 1, 0, 1, 1, 0, 1, 0], //GOOD
-};
-
 function pickTwoRandomRules() {
   const ruleKeys = Object.keys(rules); // Get all rule keys
   const randomIndex1 = Math.floor(Math.random() * ruleKeys.length);
@@ -181,9 +184,6 @@ function pickTwoRandomRules() {
   }
   return [rules[ruleKeys[randomIndex1]], rules[ruleKeys[randomIndex2]]];
 }
-let currentTheme = "leet";
-let drawSpeed = 60; // Frames per second
-let scale = 1; // Default scale is 1
 
 let ca;
 
