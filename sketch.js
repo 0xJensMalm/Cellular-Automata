@@ -1,4 +1,11 @@
 // Elementary Cellular Automaton in p5.js
+/* 
+Mutation: 
+1% chance of a newly generated cell to mutate into a new color. Adjacent cells have a 20% chance of mutation practically creating a mutation that spreads through the automata. 
+
+
+
+*/
 
 class CA {
   constructor() {
@@ -18,6 +25,8 @@ class CA {
     }
     this.generation = 0;
     this.restart();
+
+    this.mutations = {};
   }
 
   updateRule() {
@@ -56,6 +65,33 @@ class CA {
       );
     }
     this.updateRule(); // Update the rule based on the new blendFactor
+
+    let newMutations = {}; // Temporary storage for this generation's mutations
+
+    for (let i = 0; i < this.cols; i++) {
+      let mutatedRow = (this.generation + 1) % this.rows;
+      let baseMutationChance = 0.01; // Base mutation chance
+      let adjacentMutationChance = 0.2; // Higher mutation chance if adjacent to a mutated cell
+
+      // Check if any adjacent cells (left or right) in the previous row were mutated
+      let hasMutatedNeighbor =
+        this.mutations[
+          `${(i - 1 + this.cols) % this.cols},${this.generation % this.rows}`
+        ] ||
+        this.mutations[`${(i + 1) % this.cols},${this.generation % this.rows}`];
+
+      let mutationChance = hasMutatedNeighbor
+        ? adjacentMutationChance
+        : baseMutationChance;
+
+      if (random(1) < mutationChance) {
+        let color = [random(360), 100, 100]; // HSB color with random hue
+        newMutations[`${i},${mutatedRow}`] = color; // Store mutation with coordinates as key
+      }
+    }
+
+    // Merge new mutations into the main mutations object
+    this.mutations = { ...this.mutations, ...newMutations };
   }
 
   restart() {
@@ -76,11 +112,17 @@ class CA {
       for (let j = 0; j < this.rows; j++) {
         let cellY = j - offset; // Adjust for generation offset
         if (cellY <= 0) cellY = this.rows + cellY;
-        if (this.matrix[i][j] === 1) {
-          fill(0); // Fill color for active cells
+        let x = i * this.w;
+        let y = (cellY - 1) * this.w; // Adjust y position based on cell width and offset
+
+        let mutationColor = this.mutations[`${i},${j}`];
+        if (this.matrix[i][j] === 1 || mutationColor) {
+          if (mutationColor) {
+            fill(mutationColor); // Use mutated color if present
+          } else {
+            fill(...themes[currentTheme].cellColor); // Use theme color if no mutation
+          }
           noStroke();
-          let x = i * this.w;
-          let y = (cellY - 1) * this.w; // Adjust y position based on cell width and offset
           ellipse(x + this.w / 2, y + this.w / 2, this.w); // Draw cells as ellipses
         }
       }
@@ -96,25 +138,32 @@ class CA {
 
 const themes = {
   dawn: {
-    background: [20, 80, 100], // Warm orange background
-    stroke: [0, 0, 0, 0], // Transparent stroke, effectively no stroke
+    background: [20, 80, 100],
+    cellColor: [30, 100, 100], // Example cell color for dawn theme
+    stroke: [0, 0, 0, 0], // Transparent stroke
   },
   midnight: {
-    background: [230, 80, 20], // Dark blue background
-    stroke: [0, 0, 100, 0.5], // Light stroke, semi-transparent
+    background: [230, 80, 20],
+    cellColor: [240, 100, 100], // Example cell color for midnight theme
+    stroke: [0, 0, 100, 0.5], // Semi-transparent stroke
   },
   twilight: {
-    background: [280, 60, 30], // Purple background
-    stroke: [50, 100, 100, 0.5], // Bright yellow stroke, semi-transparent
+    background: [280, 60, 30],
+    cellColor: [290, 100, 100], // Example cell color for twilight theme
+    stroke: [50, 100, 100, 0.5], // Semi-transparent stroke
   },
-  forest: {
-    background: [120, 40, 40], // Dark green background
-    stroke: [60, 100, 80, 0.5], // Bright green stroke, semi-transparent
+  leet: {
+    background: [0, 0, 0],
+    cellColor: [130, 100, 100], // Example cell color for forest theme
+    stroke: [60, 100, 80, 0.5], // Semi-transparent stroke
   },
+  // Add more themes as needed
 };
 
 const rules = {
   rule110: [0, 1, 1, 0, 1, 1, 1, 0], //GOOD
+  rule77: [0, 1, 0, 0, 1, 1, 0, 1], //TJA
+  rule225: [0, 1, 1, 1, 1, 1, 1, 1], //fyll
   rule94: [0, 1, 0, 1, 1, 1, 1, 0], //GOOD
   rule102: [0, 1, 1, 0, 0, 1, 1, 0],
   rule90: [0, 1, 0, 1, 1, 0, 1, 0], //GOOD
@@ -130,9 +179,9 @@ function pickTwoRandomRules() {
   }
   return [rules[ruleKeys[randomIndex1]], rules[ruleKeys[randomIndex2]]];
 }
-let currentTheme = "twilight"; // Start with the classic theme
+let currentTheme = "leet";
 let drawSpeed = 60; // Frames per second
-let scale = 5; // Default scale is 1
+let scale = 2; // Default scale is 1
 
 let ca;
 
@@ -154,18 +203,16 @@ CA.prototype.display = function () {
       let y = (cellY - 1) * this.w;
 
       if (this.matrix[i][j] === 1) {
-        // Get the states of the left, current, and right cells to form a unique identifier
-        let left =
-          this.matrix[(i + this.cols - 1) % this.cols][j] === 1 ? 1 : 0;
-        let me = this.matrix[i][j] === 1 ? 1 : 0;
-        let right = this.matrix[(i + 1) % this.cols][j] === 1 ? 1 : 0;
-        let config = left * 4 + me * 2 + right; // Convert to a number between 0 and 7
+        // Use the cellColor from the current theme for fill
+        fill(...themes[currentTheme].cellColor);
 
-        // Use the configuration to set the hue, making similar configurations have similar colors
-        let hue = map(config, 0, 7, 0, 360); // Map the configuration to a hue value
-        fill(hue, 80, 100); // Assuming HSB color mode
+        // Use the stroke from the current theme, if it's defined with non-zero alpha
+        if (themes[currentTheme].stroke[3] > 0) {
+          stroke(...themes[currentTheme].stroke);
+        } else {
+          noStroke(); // No stroke if alpha is 0
+        }
 
-        noStroke(); // Optional: Add stroke for better visibility of cells
         ellipse(x + this.w / 2, y + this.w / 2, this.w); // Draw the cell
       }
     }
@@ -235,6 +282,21 @@ function draw() {
       innerStrokeWeight,
       height - 2 * frameWidth
     );
+
+    textSize(12); // Adjust text size as needed
+    fill(...themes[currentTheme].cellColor); // Set text color to current theme's cell color
+    noStroke(); // No stroke around the text
+
+    // Note: Ensure ca.ruleA and ca.ruleB have 'name' properties or adjust accordingly
+    let ruleText = `Rule A: ${ca.ruleA}, Rule B: ${ca.ruleB}, Theme: ${currentTheme}, Scale: ${scale}`;
+
+    // Calculate text position
+    let textX = 10; // Adjust X position as needed
+    let textY = height - frameWidth / 4; // Adjust Y position to be within the bottom frame
+
+    // Draw the text
+    textAlign(LEFT, CENTER); // Align text to the left and vertically center
+    text(ruleText, textX, textY);
   } else {
     background(...themes[currentTheme].background);
     ca.display();
