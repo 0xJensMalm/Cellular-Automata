@@ -6,6 +6,42 @@ Mutation:
 
 
 */
+let currentTheme = "leet";
+let drawSpeed = 60; // Frames per second
+let scale = 1; // Default scale is 1
+
+const themes = {
+  dawn: {
+    background: [20, 80, 100],
+    cellColor: [30, 100, 100], // Example cell color for dawn theme
+    stroke: [0, 0, 0, 0], // Transparent stroke
+  },
+  midnight: {
+    background: [230, 80, 20],
+    cellColor: [240, 100, 100], // Example cell color for midnight theme
+    stroke: [0, 0, 100, 0.5], // Semi-transparent stroke
+  },
+  twilight: {
+    background: [280, 60, 30],
+    cellColor: [290, 100, 100], // Example cell color for twilight theme
+    stroke: [50, 100, 100, 0.5], // Semi-transparent stroke
+  },
+  leet: {
+    background: [0, 0, 0],
+    cellColor: [130, 100, 100], // Example cell color for forest theme
+    stroke: [60, 100, 80, 1], // Semi-transparent stroke
+  },
+  // Add more themes as needed
+};
+
+const rules = {
+  rule110: [0, 1, 1, 0, 1, 1, 1, 0], //GOOD
+  rule77: [0, 1, 0, 0, 1, 1, 0, 1], //TJA
+  rule225: [0, 1, 1, 1, 1, 1, 1, 1], //fyll
+  rule94: [0, 1, 0, 1, 1, 1, 1, 0], //GOOD
+  rule102: [0, 1, 1, 0, 0, 1, 1, 0],
+  rule90: [0, 1, 0, 1, 1, 0, 1, 0], //GOOD
+};
 
 class CA {
   constructor() {
@@ -36,12 +72,11 @@ class CA {
 
   generate() {
     for (let i = 0; i < this.cols; i++) {
-      let left =
-        this.matrix[(i + this.cols - 1) % this.cols][
-          this.generation % this.rows
-        ];
+      let leftIndex = (i + this.cols - 1) % this.cols;
+      let rightIndex = (i + 1) % this.cols;
+      let left = this.matrix[leftIndex][this.generation % this.rows];
       let me = this.matrix[i][this.generation % this.rows];
-      let right = this.matrix[(i + 1) % this.cols][this.generation % this.rows];
+      let right = this.matrix[rightIndex][this.generation % this.rows];
       this.matrix[i][(this.generation + 1) % this.rows] = this.rules(
         left,
         me,
@@ -50,47 +85,50 @@ class CA {
     }
     this.generation++;
 
-    // Gradually transition between the two rules
-    this.blendFactor += 0.01; // Adjust the increment for speed of transition
+    this.blendFactor += 0.01;
     if (this.blendFactor >= 1) {
-      // Once the transition is complete, reset blendFactor and pick new rules
       this.blendFactor = 0;
       const [newRuleA, newRuleB] = pickTwoRandomRules();
       this.ruleA = newRuleA;
       this.ruleB = newRuleB;
-      console.log(
-        `Transitioning to New Rules:`,
-        Object.keys(rules).find((key) => rules[key] === this.ruleA),
-        Object.keys(rules).find((key) => rules[key] === this.ruleB)
-      );
     }
-    this.updateRule(); // Update the rule based on the new blendFactor
+    this.updateRule();
 
-    let newMutations = {}; // Temporary storage for this generation's mutations
-
+    let newMutations = {};
     for (let i = 0; i < this.cols; i++) {
       let mutatedRow = (this.generation + 1) % this.rows;
-      let baseMutationChance = 0.01; // Base mutation chance
-      let adjacentMutationChance = 0.2; // Higher mutation chance if adjacent to a mutated cell
+      let baseMutationChance = 0.02;
+      let adjacentMutationChance = 0.7;
+      let inheritColor = null;
 
-      // Check if any adjacent cells (left or right) in the previous row were mutated
-      let hasMutatedNeighbor =
+      // Check adjacent cells for mutations and inherit color if found
+      if (
         this.mutations[
           `${(i - 1 + this.cols) % this.cols},${this.generation % this.rows}`
-        ] ||
-        this.mutations[`${(i + 1) % this.cols},${this.generation % this.rows}`];
+        ]
+      ) {
+        inheritColor =
+          this.mutations[
+            `${(i - 1 + this.cols) % this.cols},${this.generation % this.rows}`
+          ];
+      } else if (
+        this.mutations[`${(i + 1) % this.cols},${this.generation % this.rows}`]
+      ) {
+        inheritColor =
+          this.mutations[
+            `${(i + 1) % this.cols},${this.generation % this.rows}`
+          ];
+      }
 
-      let mutationChance = hasMutatedNeighbor
+      let mutationChance = inheritColor
         ? adjacentMutationChance
         : baseMutationChance;
-
       if (random(1) < mutationChance) {
-        let color = [random(360), 100, 100]; // HSB color with random hue
-        newMutations[`${i},${mutatedRow}`] = color; // Store mutation with coordinates as key
+        let color = inheritColor || [random(360), 100, 100];
+        newMutations[`${i},${mutatedRow}`] = color;
       }
     }
 
-    // Merge new mutations into the main mutations object
     this.mutations = { ...this.mutations, ...newMutations };
   }
 
@@ -136,39 +174,6 @@ class CA {
   }
 }
 
-const themes = {
-  dawn: {
-    background: [20, 80, 100],
-    cellColor: [30, 100, 100], // Example cell color for dawn theme
-    stroke: [0, 0, 0, 0], // Transparent stroke
-  },
-  midnight: {
-    background: [230, 80, 20],
-    cellColor: [240, 100, 100], // Example cell color for midnight theme
-    stroke: [0, 0, 100, 0.5], // Semi-transparent stroke
-  },
-  twilight: {
-    background: [280, 60, 30],
-    cellColor: [290, 100, 100], // Example cell color for twilight theme
-    stroke: [50, 100, 100, 0.5], // Semi-transparent stroke
-  },
-  leet: {
-    background: [0, 0, 0],
-    cellColor: [130, 100, 100], // Example cell color for forest theme
-    stroke: [60, 100, 80, 0.5], // Semi-transparent stroke
-  },
-  // Add more themes as needed
-};
-
-const rules = {
-  rule110: [0, 1, 1, 0, 1, 1, 1, 0], //GOOD
-  rule77: [0, 1, 0, 0, 1, 1, 0, 1], //TJA
-  rule225: [0, 1, 1, 1, 1, 1, 1, 1], //fyll
-  rule94: [0, 1, 0, 1, 1, 1, 1, 0], //GOOD
-  rule102: [0, 1, 1, 0, 0, 1, 1, 0],
-  rule90: [0, 1, 0, 1, 1, 0, 1, 0], //GOOD
-};
-
 function pickTwoRandomRules() {
   const ruleKeys = Object.keys(rules); // Get all rule keys
   const randomIndex1 = Math.floor(Math.random() * ruleKeys.length);
@@ -179,9 +184,6 @@ function pickTwoRandomRules() {
   }
   return [rules[ruleKeys[randomIndex1]], rules[ruleKeys[randomIndex2]]];
 }
-let currentTheme = "leet";
-let drawSpeed = 60; // Frames per second
-let scale = 2; // Default scale is 1
 
 let ca;
 
@@ -202,9 +204,18 @@ CA.prototype.display = function () {
       let x = i * this.w;
       let y = (cellY - 1) * this.w;
 
+      // Check for mutation at the current cell
+      let mutationKey = `${i},${j}`;
+      let mutationColor = this.mutations[mutationKey];
+
       if (this.matrix[i][j] === 1) {
-        // Use the cellColor from the current theme for fill
-        fill(...themes[currentTheme].cellColor);
+        if (mutationColor) {
+          // If there's a mutation, use the mutated color
+          fill(...mutationColor); // Spread the HSB color array
+        } else {
+          // No mutation, use the theme's cell color
+          fill(...themes[currentTheme].cellColor);
+        }
 
         // Use the stroke from the current theme, if it's defined with non-zero alpha
         if (themes[currentTheme].stroke[3] > 0) {
