@@ -70,8 +70,8 @@ class CA {
 
     for (let i = 0; i < this.cols; i++) {
       let mutatedRow = (this.generation + 1) % this.rows;
-      let baseMutationChance = 0.01; // Base mutation chance
-      let adjacentMutationChance = 0.2; // Higher mutation chance if adjacent to a mutated cell
+      let baseMutationChance = 0.02; // Base mutation chance
+      let adjacentMutationChance = 0.5; // Higher mutation chance if adjacent to a mutated cell
 
       // Check if any adjacent cells (left or right) in the previous row were mutated
       let hasMutatedNeighbor =
@@ -181,7 +181,7 @@ function pickTwoRandomRules() {
 }
 let currentTheme = "leet";
 let drawSpeed = 60; // Frames per second
-let scale = 2; // Default scale is 1
+let scale = 1; // Default scale is 1
 
 let ca;
 
@@ -202,9 +202,18 @@ CA.prototype.display = function () {
       let x = i * this.w;
       let y = (cellY - 1) * this.w;
 
+      // Check for mutation at the current cell
+      let mutationKey = `${i},${j}`;
+      let mutationColor = this.mutations[mutationKey];
+
       if (this.matrix[i][j] === 1) {
-        // Use the cellColor from the current theme for fill
-        fill(...themes[currentTheme].cellColor);
+        if (mutationColor) {
+          // If there's a mutation, use the mutated color
+          fill(...mutationColor); // Spread the HSB color array
+        } else {
+          // No mutation, use the theme's cell color
+          fill(...themes[currentTheme].cellColor);
+        }
 
         // Use the stroke from the current theme, if it's defined with non-zero alpha
         if (themes[currentTheme].stroke[3] > 0) {
